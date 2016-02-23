@@ -108,6 +108,8 @@ func getMLSNumbers() []string {
 			if strings.Contains(tLower, ", fl") {
 				// We don't want homes not in Gainesville
 				if !strings.Contains(tLower, "gainesville") {
+					// Remove the latest MLS number from the array
+					MLSNums = MLSNums[:len(MLSNums)-1]
 					break
 				}
 			}
