@@ -9,12 +9,13 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 func main() {
 	MLSNumbers := getMLSNumbers()
-	deets := getMLSDetails(MLSNumbers)
-	fmt.Println(deets)
+	MLSURLs := getMLSDetails(MLSNumbers)
+	fmt.Println(MLSURLs)
 }
 
 func getMLSNumbers() []string {
@@ -111,8 +112,41 @@ func getMLSNumbers() []string {
 	}
 }
 
+func removeEmpty(inputArray []string) []string {
+	returnArray := []string{}
+	for _, str := range inputArray {
+		if str != "" {
+			returnArray = append(returnArray, str)
+		}
+	}
+	return returnArray
+}
+
 func getMLSDetails(mlsArray []string) []string {
 	MLSURLs := []string{}
+	// chans := make([]chan string, len(mlsArray))
+	responses := make(chan string)
+	var wg sync.WaitGroup
+
+	for _, mlsNumber := range mlsArray {
+		wg.Add(1)
+		go func(mlsNumber string) {
+			defer wg.Done()
+			responses <- getMLSDetail(mlsNumber)
+		}(mlsNumber)
+	}
+
+	go func() {
+		for response := range responses {
+			MLSURLs = append(MLSURLs, response)
+		}
+	}()
+	wg.Wait()
+	return removeEmpty(MLSURLs)
+}
+
+func getMLSDetail(MLSNumber string) string {
+	MLSURL := ""
 
 	searchURL := "http://www.gainesvillemls.com"
 	searchPath := "/gan/idx/detail.php"
@@ -120,58 +154,54 @@ func getMLSDetails(mlsArray []string) []string {
 	data.Set("key", "52633f4973cf845e55b18c8e22ab08d5")
 	data.Add("gallery", "false")
 	data.Add("custom", "")
+	data.Add("mls", MLSNumber)
+	u, _ := url.ParseRequestURI(searchURL)
+	u.Path = searchPath
+	urlStr := fmt.Sprintf("%v", u)
 
-	for _, mlsNumber := range mlsArray {
-		data.Add("mls", mlsNumber)
-		u, _ := url.ParseRequestURI(searchURL)
-		u.Path = searchPath
-		urlStr := fmt.Sprintf("%v", u)
+	client := &http.Client{}
+	request, requestErr := http.NewRequest("POST", urlStr, bytes.NewBufferString(data.Encode()))
+	if requestErr != nil {
+		log.Fatalf("Problem creating new httpRequest", "%s", requestErr)
+	}
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+	request.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
-		client := &http.Client{}
-		request, requestErr := http.NewRequest("POST", urlStr, bytes.NewBufferString(data.Encode()))
-		if requestErr != nil {
-			log.Fatalf("Problem creating new httpRequest", "%s", requestErr)
-		}
-		request.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-		request.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+	resp, responseError := client.Do(request)
+	if responseError != nil {
+		log.Fatalf("Problem creating new httpRequest", "%s", responseError)
+	}
 
-		resp, responseError := client.Do(request)
-		if responseError != nil {
-			log.Fatalf("Problem creating new httpRequest", "%s", responseError)
-		}
+	responseBody := resp.Body
+	defer responseBody.Close()
 
-		responseBody := resp.Body
-		defer responseBody.Close()
+	parsedHTML := html.NewTokenizer(responseBody)
 
-		parsedHTML := html.NewTokenizer(responseBody)
+	constructionFlag := false
+	constructionCounter := 2
 
-		constructionFlag := false
-		constructionCounter := 2
-
-	tokenLoop:
-		for {
-			tt := parsedHTML.Next()
-			switch {
-			case tt == html.ErrorToken:
-				break tokenLoop
-			case tt == html.TextToken:
-				t := parsedHTML.Token()
-				if constructionFlag == true {
-					constructionCounter--
-					if constructionCounter == 0 {
-						if strings.Contains(strings.ToLower(t.String()), "block") {
-							MLSURL := fmt.Sprintf("http://www.gainesvillemls.com/gan/idx/index.php?key=52633f4973cf845e55b18c8e22ab08d5&mls=%s\n", mlsNumber)
-							MLSURLs = append(MLSURLs, MLSURL)
-						}
-						constructionFlag = false
+tokenLoop:
+	for {
+		tt := parsedHTML.Next()
+		switch {
+		case tt == html.ErrorToken:
+			break tokenLoop
+		case tt == html.TextToken:
+			t := parsedHTML.Token()
+			if constructionFlag == true {
+				constructionCounter--
+				if constructionCounter == 0 {
+					if strings.Contains(strings.ToLower(t.String()), "block") {
+						MLSURL = fmt.Sprintf("http://www.gainesvillemls.com/gan/idx/index.php?key=52633f4973cf845e55b18c8e22ab08d5&mls=%s\n", MLSNumber)
 					}
+					constructionFlag = false
 				}
-				if t.String() == "Construction-exterior:" {
-					constructionFlag = true
-				}
-
 			}
+			if t.String() == "Construction-exterior:" {
+				constructionFlag = true
+			}
+
 		}
 	}
-	return MLSURLs
+	return MLSURL
 }
