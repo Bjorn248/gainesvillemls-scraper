@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"golang.org/x/net/html"
+	"github.com/Bjorn248/gainesvillemls-scraper/Godeps/_workspace/src/golang.org/x/net/html"
 	"log"
 	"net/http"
 	"net/url"

@@ -1,0 +1,10 @@
+{
+	"ImportPath": "github.com/Bjorn248/gainesvillemls-scraper",
+	"GoVersion": "go1.6",
+	"Deps": [
+		{
+			"ImportPath": "golang.org/x/net/html",
+			"Rev": "66f0418ca41253f8d1a024eb9754e9441a8e79b9"
+		}
+	]
+}
