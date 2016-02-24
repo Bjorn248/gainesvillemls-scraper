@@ -122,16 +122,6 @@ func getMLSNumbers() []string {
 	}
 }
 
-func removeEmpty(inputArray []string) []string {
-	returnArray := []string{}
-	for _, str := range inputArray {
-		if str != "" {
-			returnArray = append(returnArray, str)
-		}
-	}
-	return returnArray
-}
-
 func getMLSDetails(mlsArray []string) []string {
 	MLSURLs := []string{}
 	// chans := make([]chan string, len(mlsArray))
@@ -148,11 +138,14 @@ func getMLSDetails(mlsArray []string) []string {
 
 	go func() {
 		for response := range responses {
-			MLSURLs = append(MLSURLs, response)
+			// We only want responses that are not empty strings
+			if response != "" {
+				MLSURLs = append(MLSURLs, response)
+			}
 		}
 	}()
 	wg.Wait()
-	return removeEmpty(MLSURLs)
+	return MLSURLs
 }
 
 func getMLSDetail(MLSNumber string) string {
@@ -190,12 +183,11 @@ func getMLSDetail(MLSNumber string) string {
 	constructionFlag := false
 	constructionCounter := 2
 
-tokenLoop:
 	for {
 		tt := parsedHTML.Next()
 		switch {
 		case tt == html.ErrorToken:
-			break tokenLoop
+			return MLSURL
 		case tt == html.TextToken:
 			t := parsedHTML.Token()
 			if constructionFlag == true {
@@ -213,5 +205,4 @@ tokenLoop:
 
 		}
 	}
-	return MLSURL
 }
