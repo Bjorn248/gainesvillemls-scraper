@@ -29,7 +29,7 @@ func getMLSNumbers() []string {
 	data.Add("LM_MST_prop_cdYYNT", "1,9,10,11,12,13,14")
 	data.Add("LM_MST_mls_noYYNT", "")
 	// Minimum Price
-	data.Add("LM_MST_list_prcYNNB", "")
+	data.Add("LM_MST_list_prcYNNB", "60000")
 	// Maximum Price
 	data.Add("LM_MST_list_prcYNNE", "175000")
 	data.Add("LM_MST_prop_cdYNNL[]", "9")
@@ -38,7 +38,7 @@ func getMLSNumbers() []string {
 	// Maximum Square Footage
 	data.Add("LM_MST_sqft_nYNNE", "")
 	// Minimum Year Built
-	data.Add("LM_MST_yr_bltYNNB", "1981")
+	data.Add("LM_MST_yr_bltYNNB", "")
 	// Maximum Year Built
 	data.Add("LM_MST_yr_bltYNNE", "")
 	// Minimum Bedrooms
@@ -182,6 +182,8 @@ func getMLSDetail(MLSNumber string) string {
 
 	constructionFlag := false
 	constructionCounter := 2
+	parkingFlag := false
+	parkingCounter := 2
 
 	for {
 		tt := parsedHTML.Next()
@@ -199,8 +201,20 @@ func getMLSDetail(MLSNumber string) string {
 					constructionFlag = false
 				}
 			}
+			if parkingFlag == true {
+				parkingCounter--
+				if parkingCounter == 0 {
+					if strings.Contains(strings.ToLower(t.String()), "no garage") {
+						MLSURL = ""
+					}
+					parkingFlag = false
+				}
+			}
 			if t.String() == "Construction-exterior:" {
 				constructionFlag = true
+			}
+			if t.String() == "Parking:" {
+				parkingFlag = true
 			}
 
 		}
