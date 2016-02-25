@@ -205,7 +205,7 @@ func getMLSDetail(MLSNumber string) string {
 				parkingCounter--
 				if parkingCounter == 0 {
 					if strings.Contains(strings.ToLower(t.String()), "no garage") {
-						MLSURL = ""
+						return ""
 					}
 					parkingFlag = false
 				}
