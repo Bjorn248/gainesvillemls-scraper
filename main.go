@@ -31,7 +31,7 @@ func getMLSNumbers() []string {
 	// Minimum Price
 	data.Add("LM_MST_list_prcYNNB", "60000")
 	// Maximum Price
-	data.Add("LM_MST_list_prcYNNE", "175000")
+	data.Add("LM_MST_list_prcYNNE", "150000")
 	data.Add("LM_MST_prop_cdYNNL[]", "9")
 	// Minimum Square Footage
 	data.Add("LM_MST_sqft_nYNNB", "")
