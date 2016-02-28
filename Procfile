@@ -1,1 +1,1 @@
-bot: gainesvillemls-scraper
+scraper: gainesvillemls-scraper
