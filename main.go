@@ -58,7 +58,7 @@ func main() {
 		// never reaching 0
 		// reaching 0 would be the program would exit
 		waitForever.Add(1)
-		MLSPrices := getMLSPrice()
+		MLSPrices := getMLSPrices()
 		populateListings(MLSPrices)
 		MLSNumbers := returnMLSNumbers(MLSPrices)
 		MLSURLs := getMLSDetails(MLSNumbers)
@@ -108,7 +108,7 @@ func populateListings(listings []string) {
 	}
 }
 
-func getMLSPrice() []string {
+func getMLSPrices() []string {
 	MLSNums := []string{}
 
 	searchURL := "http://www.gainesvillemls.com"
