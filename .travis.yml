@@ -1,0 +1,13 @@
+language: go
+go:
+- 1.6.0
+deploy:
+  provider: heroku
+  api_key:
+    secure:
+  app: gainesvillemls-scraper
+  on:
+    repo: Bjorn248/gainesvillemls-scraper
+branches:
+  only:
+  - master
