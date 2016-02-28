@@ -2,23 +2,113 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
+	"github.com/Bjorn248/gainesvillemls-scraper/Godeps/_workspace/src/github.com/garyburd/redigo/redis"
+	"github.com/Bjorn248/gainesvillemls-scraper/Godeps/_workspace/src/github.com/robfig/cron"
 	"github.com/Bjorn248/gainesvillemls-scraper/Godeps/_workspace/src/golang.org/x/net/html"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
 )
 
+var cronScheduler *cron.Cron
+
+// We just want to keep the program running forever
+// So that the scheduler can keep running the search function
+var waitForever sync.WaitGroup
+
 func main() {
-	MLSNumbers := getMLSNumbers()
-	MLSURLs := getMLSDetails(MLSNumbers)
-	fmt.Println(MLSURLs)
+	if os.Getenv("REDIS_HOST_PORT") == "" {
+		log.Fatal("REDIS_HOST_PORT not set")
+	}
+	if os.Getenv("REDIS_PASSWORD") == "" {
+		log.Fatal("REDIS_PASSWORD not set")
+	}
+	if os.Getenv("SENDGRID_API_TOKEN") == "" {
+		log.Fatal("SENDGRID_API_TOKEN not set")
+	}
+	if os.Getenv("EMAIL_FROM_ADDRESS") == "" {
+		log.Fatal("EMAIL_FROM_ADDRESS not set")
+	}
+	if os.Getenv("EMAIL_TO_ADDRESS") == "" {
+		log.Fatal("EMAIL_TO_ADDRESS not set")
+	}
+
+	flag.Parse()
+	// Instantiate redis connection pool
+	pool = newPool(*redisServer, *redisPassword)
+	poolErr := pool.Get().Err()
+	// Check redis connection
+	if poolErr != nil {
+		log.Fatalf("Something went wrong connecting to Redis! Error is '%s'", poolErr)
+	}
+
+	// Instantiate Cron Scheduler
+	cronScheduler = cron.New()
+
+	waitForever.Add(1)
+
+	cronScheduler.AddFunc("@hourly", func() {
+		// waitForever is now 2, so it will cycle between 2 and 1
+		// never reaching 0
+		// reaching 0 would be the program would exit
+		waitForever.Add(1)
+		MLSPrices := getMLSPrice()
+		populateListings(MLSPrices)
+		MLSNumbers := returnMLSNumbers(MLSPrices)
+		MLSURLs := getMLSDetails(MLSNumbers)
+		fmt.Println(MLSURLs)
+		sendEmail(os.Getenv("EMAIL_TO_ADDRESS"), MLSURLs)
+		waitForever.Done()
+	})
+	cronScheduler.Start()
+	waitForever.Wait()
 }
 
-func getMLSNumbers() []string {
+func returnMLSNumbers(MLSNumberPrices []string) []string {
+	MLSNumbers := []string{}
+	for _, MLSPrice := range MLSNumberPrices {
+		MLSNumbers = append(MLSNumbers, strings.Split(MLSPrice, "_")[0])
+	}
+	return MLSNumbers
+}
+
+func filterOldListings(listings []string) []string {
+	redisConn := pool.Get()
+	defer redisConn.Close()
+
+	filteredListings := []string{}
+
+	for _, listing := range listings {
+		redisReply, redisError := redis.Bool(redisConn.Do("EXISTS", listing))
+		if redisError != nil {
+			log.Fatalf("Error reading redis data '%s'", redisError)
+		}
+		if redisReply == false {
+			filteredListings = append(filteredListings, listing)
+		}
+	}
+	return filteredListings
+}
+
+func populateListings(listings []string) {
+	redisConn := pool.Get()
+	defer redisConn.Close()
+
+	for _, listing := range listings {
+		_, redisError := redisConn.Do("SET", listing, "true")
+		if redisError != nil {
+			log.Fatalf("Error inserting data into redis '%s'", redisError)
+		}
+	}
+}
+
+func getMLSPrice() []string {
 	MLSNums := []string{}
 
 	searchURL := "http://www.gainesvillemls.com"
@@ -91,32 +181,44 @@ func getMLSNumbers() []string {
 
 	MLSNumber := ""
 	MLSFlag := false
+	Price := ""
+	PriceFlag := false
+	cityFlag := false
 
 	for {
 		tt := parsedHTML.Next()
 		switch {
 		case tt == html.ErrorToken:
-			return MLSNums
+			return filterOldListings(MLSNums)
 		case tt == html.StartTagToken:
 			t := parsedHTML.Token()
 			if t.String() == `<span class="mls">` {
 				MLSFlag = true
+			}
+			if t.String() == `<span class="price">` {
+				PriceFlag = true
 			}
 		case tt == html.TextToken:
 			t := parsedHTML.Token().String()
 			tLower := strings.ToLower(t)
 			if strings.Contains(tLower, ", fl") {
 				// We don't want homes not in Gainesville
-				if !strings.Contains(tLower, "gainesville") {
-					// Remove the latest MLS number from the array
-					MLSNums = MLSNums[:len(MLSNums)-1]
-					break
+				if strings.Contains(tLower, "gainesville") {
+					cityFlag = true
 				}
 			}
 			if MLSFlag == true {
 				MLSNumber = t
-				MLSNums = append(MLSNums, MLSNumber)
 				MLSFlag = false
+			}
+			if PriceFlag == true {
+				Price = strings.TrimSpace(t)
+				MLS_Price := MLSNumber + "_" + Price
+				if cityFlag == true {
+					MLSNums = append(MLSNums, MLS_Price)
+					cityFlag = false
+				}
+				PriceFlag = false
 			}
 		}
 	}
