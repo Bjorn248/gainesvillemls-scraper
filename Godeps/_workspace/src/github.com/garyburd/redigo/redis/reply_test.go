@@ -19,8 +19,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Bjorn248/gainesvillemls-scraper/Godeps/_workspace/src/github.com/garyburd/redigo/internal/redistest"
-	"github.com/Bjorn248/gainesvillemls-scraper/Godeps/_workspace/src/github.com/garyburd/redigo/redis"
+	"github.com/BjornTwitchBot/gainesvillemls-scraper/Godeps/_workspace/src/github.com/garyburd/redigo/internal/redistest"
+	"github.com/BjornTwitchBot/gainesvillemls-scraper/Godeps/_workspace/src/github.com/garyburd/redigo/redis"
 )
 
 type valueError struct {

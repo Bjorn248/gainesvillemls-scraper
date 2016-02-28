@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/Bjorn248/gainesvillemls-scraper",
+	"ImportPath": "github.com/BjornTwitchBot/gainesvillemls-scraper",
 	"GoVersion": "go1.6",
 	"Deps": [
 		{

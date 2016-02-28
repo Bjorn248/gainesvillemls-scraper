@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/Bjorn248/gainesvillemls-scraper/Godeps/_workspace/src/github.com/sendgrid/sendgrid-go"
+	"github.com/BjornTwitchBot/gainesvillemls-scraper/Godeps/_workspace/src/github.com/sendgrid/sendgrid-go"
 	"os"
 )
 

@@ -25,7 +25,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Bjorn248/gainesvillemls-scraper/Godeps/_workspace/src/github.com/garyburd/redigo/internal"
+	"github.com/BjornTwitchBot/gainesvillemls-scraper/Godeps/_workspace/src/github.com/garyburd/redigo/internal"
 )
 
 var nowFunc = time.Now // for testing
