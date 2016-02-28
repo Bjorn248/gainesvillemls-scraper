@@ -63,7 +63,9 @@ func main() {
 		MLSNumbers := returnMLSNumbers(MLSPrices)
 		MLSURLs := getMLSDetails(MLSNumbers)
 		fmt.Println(MLSURLs)
-		sendEmail(os.Getenv("EMAIL_TO_ADDRESS"), MLSURLs)
+		if len(MLSURLs) > 0 {
+			sendEmail(os.Getenv("EMAIL_TO_ADDRESS"), MLSURLs)
+		}
 		waitForever.Done()
 	})
 	cronScheduler.Start()
