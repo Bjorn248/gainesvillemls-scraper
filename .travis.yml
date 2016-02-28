@@ -7,7 +7,7 @@ deploy:
     secure: WpU6HPRqPwuf2/CoLN5eQ0mB366kyfNjbZLf1iRXTKl/V8WJohNvD7+/KCJlxY6VqkYeAd0Zzw++i40KsOBE1LB+PsfDIkV6fLPxOdH10DVjk3ecCCfkVsIVpe8FssQKU00x6XJA41QKOuK6Nm35FNhrsGRGCEDdjCy7f3mwyWcwJg7THdDnnWqPGSgsT22FkpBwIbqDWJjyRK80K9uA2c79w4JM56q29ftLREVhAL9bVCHm6K0Yl+ZRNUpakVqGiGQCx/BzcKqgf9X41f62iq5TlA4DMxIbW77tCP63szVETThoPNvbAb1EQ1e4dsVRJ5iKelz5Gpw8om3AXL/XfpuyCTVnXXclu4XFzdvDgq3TDF0oPFYsIuwtcg/iBPG+15jsy6/vcH6n+CM4m7l6ZhIGY1Q90TufKTdiL5iBRKWSE5oUfVqPqPkiRAylmqKwKrVmT2yDHre6fiIYAEBIj/nqMKNoW/WVBgZ+/xBmyaKAVm4iVV/1EjMN8K+nG9EP/Z9oxeVIqaQrB81JyPWjbR84OUnZBRb3TuXbxKT4k1Kk7WhS9sgjnS0tCv6Cou77R2zfM8EE8rw4M2wGxRhi/+DohaUCc3phBjaNH5LaB6nf1bBKyk1FWwbgttzNlqfxj7tgKAeVEHH8PRgArhJgMRb1rcJvMu/CsCAP8BNjutU=
   app: gainesvillemls-scraper
   on:
-    repo: Bjorn248/gainesvillemls-scraper
+    repo: BjornTwitchBot/gainesvillemls-scraper
 branches:
   only:
   - master
