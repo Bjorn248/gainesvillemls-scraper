@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/BjornTwitchBot/gainesvillemls-scraper/Godeps/_workspace/src/github.com/garyburd/redigo/redis"
-	"github.com/BjornTwitchBot/gainesvillemls-scraper/Godeps/_workspace/src/github.com/robfig/cron"
 	"github.com/BjornTwitchBot/gainesvillemls-scraper/Godeps/_workspace/src/golang.org/x/net/html"
 	"log"
 	"net/http"
@@ -15,12 +14,6 @@ import (
 	"strings"
 	"sync"
 )
-
-var cronScheduler *cron.Cron
-
-// We just want to keep the program running forever
-// So that the scheduler can keep running the search function
-var waitForever sync.WaitGroup
 
 func main() {
 	if os.Getenv("REDIS_HOST_PORT") == "" {
@@ -48,28 +41,16 @@ func main() {
 		log.Fatalf("Something went wrong connecting to Redis! Error is '%s'", poolErr)
 	}
 
-	// Instantiate Cron Scheduler
-	cronScheduler = cron.New()
-
-	waitForever.Add(1)
-
-	cronScheduler.AddFunc("@hourly", func() {
-		// waitForever is now 2, so it will cycle between 2 and 1
-		// never reaching 0
-		// reaching 0 would cause the program to exit
-		waitForever.Add(1)
-		MLSPrices := getMLSPrices()
-		populateListings(MLSPrices)
-		MLSNumbers := returnMLSNumbers(MLSPrices)
-		MLSURLs := getMLSDetails(MLSNumbers)
-		fmt.Println(MLSURLs)
-		if len(MLSURLs) > 0 {
-			sendEmail(os.Getenv("EMAIL_TO_ADDRESS"), MLSURLs)
-		}
-		waitForever.Done()
-	})
-	cronScheduler.Start()
-	waitForever.Wait()
+	MLSPrices := getMLSPrices()
+	populateListings(MLSPrices)
+	MLSNumbers := returnMLSNumbers(MLSPrices)
+	MLSURLs := getMLSDetails(MLSNumbers)
+	fmt.Println(MLSURLs)
+	if len(MLSURLs) > 0 {
+		sendEmail(os.Getenv("EMAIL_TO_ADDRESS"), MLSURLs)
+	} else {
+		fmt.Println("No New Listings")
+	}
 }
 
 func returnMLSNumbers(MLSNumberPrices []string) []string {
@@ -113,7 +94,7 @@ func populateListings(listings []string) {
 func getMLSPrices() []string {
 	MLSNums := []string{}
 
-	searchURL := "http://www.gainesvillemls.com"
+	searchURL := "https://www.gainesvillemls.com"
 	searchPath := "/gan/idx/search.php"
 
 	data := url.Values{}
@@ -170,13 +151,22 @@ func getMLSPrices() []string {
 	}
 	request.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 	request.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+	request.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36")
+	request.Header.Add("Accept", "*/*")
+	request.Header.Add("Accept-Language", "en-US,en;q=0.8")
+	request.Header.Add("Accept-Encoding", "gzip, deflate")
+	request.Header.Add("Referer", "https://www.gainesvillemls.com/gan/idx/index.php?key=52633f4973cf845e55b18c8e22ab08d5")
+	request.Header.Add("X-Requested-With", "XMLHttpRequest")
 
 	resp, responseError := client.Do(request)
 	if responseError != nil {
-		log.Fatalf("Problem creating new httpRequest", "%s", responseError)
+		log.Fatalf("Problem getting http response", "%s", responseError)
 	}
 
 	responseBody := resp.Body
+	if resp.StatusCode != 200 {
+		log.Fatalf("Response status not 200: %v, %v", resp.StatusCode, resp.Status)
+	}
 	defer responseBody.Close()
 
 	parsedHTML := html.NewTokenizer(responseBody)
@@ -255,7 +245,7 @@ func getMLSDetails(mlsArray []string) []string {
 func getMLSDetail(MLSNumber string) string {
 	MLSURL := ""
 
-	searchURL := "http://www.gainesvillemls.com"
+	searchURL := "https://www.gainesvillemls.com"
 	searchPath := "/gan/idx/detail.php"
 	data := url.Values{}
 	data.Set("key", "52633f4973cf845e55b18c8e22ab08d5")
@@ -273,6 +263,12 @@ func getMLSDetail(MLSNumber string) string {
 	}
 	request.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 	request.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+	request.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36")
+	request.Header.Add("Accept", "*/*")
+	request.Header.Add("Accept-Language", "en-US,en;q=0.8")
+	request.Header.Add("Accept-Encoding", "gzip, deflate")
+	request.Header.Add("Referer", "https://www.gainesvillemls.com/gan/idx/index.php?key=52633f4973cf845e55b18c8e22ab08d5")
+	request.Header.Add("X-Requested-With", "XMLHttpRequest")
 
 	resp, responseError := client.Do(request)
 	if responseError != nil {
@@ -300,7 +296,7 @@ func getMLSDetail(MLSNumber string) string {
 				constructionCounter--
 				if constructionCounter == 0 {
 					if strings.Contains(strings.ToLower(t.String()), "block") {
-						MLSURL = fmt.Sprintf("http://www.gainesvillemls.com/gan/idx/index.php?key=52633f4973cf845e55b18c8e22ab08d5&mls=%s\n", MLSNumber)
+						MLSURL = fmt.Sprintf("https://www.gainesvillemls.com/gan/idx/index.php?key=52633f4973cf845e55b18c8e22ab08d5&mls=%s\n", MLSNumber)
 					}
 					constructionFlag = false
 				}
