@@ -56,14 +56,16 @@ func main() {
 	cronScheduler.AddFunc("@hourly", func() {
 		// waitForever is now 2, so it will cycle between 2 and 1
 		// never reaching 0
-		// reaching 0 would be the program would exit
+		// reaching 0 would cause the program to exit
 		waitForever.Add(1)
 		MLSPrices := getMLSPrices()
 		populateListings(MLSPrices)
 		MLSNumbers := returnMLSNumbers(MLSPrices)
 		MLSURLs := getMLSDetails(MLSNumbers)
 		fmt.Println(MLSURLs)
-		sendEmail(os.Getenv("EMAIL_TO_ADDRESS"), MLSURLs)
+		if len(MLSURLs) != 0 {
+			sendEmail(os.Getenv("EMAIL_TO_ADDRESS"), MLSURLs)
+		}
 		waitForever.Done()
 	})
 	cronScheduler.Start()
