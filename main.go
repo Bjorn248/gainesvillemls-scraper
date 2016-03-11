@@ -223,7 +223,7 @@ func getMLSDetails(mlsArray []string) []string {
 	var wg sync.WaitGroup
 
 	for _, mlsNumber := range mlsArray {
-		wg.Add(1)
+		wg.Add(2)
 		go func(mlsNumber string) {
 			defer wg.Done()
 			responses <- getMLSDetail(mlsNumber)
@@ -236,6 +236,7 @@ func getMLSDetails(mlsArray []string) []string {
 			if response != "" {
 				MLSURLs = append(MLSURLs, response)
 			}
+			wg.Done()
 		}
 	}()
 	wg.Wait()
