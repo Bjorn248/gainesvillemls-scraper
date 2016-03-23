@@ -296,7 +296,7 @@ func getMLSDetail(MLSNumber string) string {
 			if constructionFlag == true {
 				constructionCounter--
 				if constructionCounter == 0 {
-					if strings.Contains(strings.ToLower(t.String()), "block") {
+					if strings.Contains(strings.ToLower(t.String()), "block") || strings.Contains(strings.ToLower(t.String()), "blk") || strings.Contains(strings.ToLower(t.String()), "brick") {
 						MLSURL = fmt.Sprintf("https://www.gainesvillemls.com/gan/idx/index.php?key=52633f4973cf845e55b18c8e22ab08d5&mls=%s\n", MLSNumber)
 					}
 					constructionFlag = false
